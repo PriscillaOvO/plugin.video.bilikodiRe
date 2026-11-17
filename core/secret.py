@@ -1,6 +1,9 @@
 import json, os
 import requests as r
 
+http = r.Session()
+http.trust_env = False
+
 import core.core as c
 import core.tools as ts
 
@@ -15,7 +18,7 @@ bili = Plugin()
 
 def get_cooks():
     # if ts.getSet("disable_login", bool): return {}
-    return bili.get_storage("user")["cookies"]
+    return bili.get_storage("user").get("cookies", {})
 
 def get_refkey():
     # if ts.getSet("disable_login", "bool"): return ""
@@ -37,7 +40,7 @@ def get_uid():
 
 def update_buvid():
     if ts.getSet("priv_buvid", bool) == False: return
-    res = r.get("https://api.bilibili.com/x/web-frontend/getbuvid")
+    res = http.get("https://api.bilibili.com/x/web-frontend/getbuvid")
     ts.log(res.text)
     try:
         raw = res.json()
@@ -78,13 +81,13 @@ def encWbi(params: dict, img_key: str, sub_key: str):
     params['w_rid'] = wbi_sign
     return params
 
-def getWbiKeys() -> tuple[str, str]:
+def getWbiKeys() -> tuple:
     '获取最新的 img_key 和 sub_key'
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
         'Referer': 'https://www.bilibili.com/'
     }
-    resp = r.get('https://api.bilibili.com/x/web-interface/nav', headers=headers)
+    resp = http.get('https://api.bilibili.com/x/web-interface/nav', headers=headers)
     resp.raise_for_status()
     json_content = resp.json()
     img_url: str = json_content['data']['wbi_img']['img_url']

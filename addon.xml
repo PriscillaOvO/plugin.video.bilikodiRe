@@ -10,7 +10,10 @@
   <extension point="xbmc.python.pluginsource" library="addon.py">
     <provides>video</provides>
   </extension>
+  <extension point="xbmc.python.script" library="catalog_script.py" />
+  <extension point="xbmc.service" library="manifest_service.py" />
   <extension point="xbmc.addon.metadata">
+    <license>GPL-2.0-or-later</license>
     <platform>all</platform>
     <summary lang="en">A "New" Unofficial third-party bilibili client on kodi</summary>
     <summary lang="zh_CN">一个“新的”非官方的第三方b站客户端 on Kodi</summary>
@@ -31,7 +34,7 @@ Should support Kodi 19/20/21/22
   <source>https://github.com/toad114514/plugin.video.bilikodiRe</source>
     <email>xiaolan2332021@163.com</email>
     <assets>
-        <icon>icon.png</icon>
+        <icon>bilibili.png</icon>
         <fanart>fanart.png</fanart>
     </assets>
     <disclaimer>

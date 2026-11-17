@@ -5,15 +5,13 @@
 我重生了，发现我找不到  
    kodi的b站客户端了  
 于是自己手搓这件事<br>
+Version: idk
 </center>
 
 [![Stars](https://img.shields.io/github/stars/Toad114514/plugin.video.bilikodiRe.svg)](https://github.com/Toad114514/plugin.video.bilikodiRe/status)
 [![Forks](https://img.shields.io/github/forks/Toad114514/plugin.video.bilikodiRe.svg)](https://github.com/Toad114514/plugin.video.bilikodiRe/network/members)
 [![Issues](https://img.shields.io/github/issues/Toad114514/plugin.video.bilikodiRe.svg)](https://github.com/Toad114514/plugin.video.bilikodiRe/issues)
-![Static Badge](https://img.shields.io/badge/Kodi-19.x_Matrix-blue?logo=kodi)
-[![Python](https://img.shields.io/badge/language-Python%203-blue.svg)](https://www.python.org)  
-![GitHub Release](https://img.shields.io/github/v/release/Toad114514/plugin.video.bilikodiRe?display_name=release)
-![GitHub Pre-Release](https://img.shields.io/github/v/release/Toad114514/plugin.video.bilikodiRe?include_prereleases&display_name=release)
+[![Python](https://img.shields.io/badge/language-Python%203-blue.svg)](https://www.python.org)
 # 简介
 神秘的**非第三方**b站客户端的 Kodi 插件  
 Bilikodi 的精神续作（其实是重构版，代码全重写）  
@@ -38,20 +36,29 @@ Bilikodi 的精神续作（其实是重构版，代码全重写）
    - 视频投稿内容
    - 收藏夹/内容查看
    - 关注列表
- - 搜索功能
-   - 综合搜索
-   - 分类搜索 (用户/视频/番剧)
-   - 本地历史搜索（没做）
+ - 搜索功能（半残）
  - 界面调整
    - 支持调整各种页面的单页显示数 (首页/关注列表/稿件)
    - 支持调整直接显示详细内容 (收藏夹)
    - 用户详细信息页面的背景设定
 # 已知问题
  - 默认收藏夹无法打开的bug
+ - 搜索功能部分地区必须要求人机验证（我这里就是所以没办法测试搜索功能）
 # 鸣谢和声明
 [toad114514/plugin.video.bilikodi](https://github.com/toad114514/plugin.video.bilikodi) - 此项目的老豆，子承父业这一块  
-[pskdje/bilibili-API-collect](https://github.com/pskdje/bilibili-API-collect) - 收集了大量的b站api用于本插件的运作（原 [SocialSisterYi/bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect) 仓库已被蜀黍爆破）   
+[SocialSisterYi/bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect) - 收集了大量的b站api用于本插件的运作（仓库已被叔叔爆破）  
 [chen310/plugin.video.bili](https://github.com/chen310/plugin.video.bili) - 代码参考  
-本插件使用了 MIT License 开源协议，用户造成的任何问题导致 无法访问/B站号被封/IP封禁/小黑屋/78被砍/九蓝一金/在上层饿死/变成爱牛/宇宙大爆炸 等问题都与原作者无关。  
+本插件使用了 MIT License 开源协议，用户造成的问题导致 B站号被封/IP封禁/小黑屋/78被砍/法律问题/九蓝一金/在上层饿死/变成爱牛/地球爆炸 等问题都与原作者无关。  
 本插件与哔哩哔哩官方没有任何关系，本项目也没有受到哔哩哔哩官方的允许和支持。  
-本插件仅供学习参考使用，不会通过任何手段收集你的信息。
+本插件仅供学习参考使用，不会通过任何手段收集你的信息。## Downstream license
+
+This combined fork is distributed under the GNU GPL version 2 or later.
+See [LICENSE](LICENSE). The original BilikodiRe copyright notice and MIT
+license are retained in [LICENSE.MIT](LICENSE.MIT). The catalog windows,
+layouts, category definitions and replacement icon originate from
+[mkckr0/script.video.bilibili](https://github.com/mkckr0/script.video.bilibili).
+See [catalog attribution](core/catalog/NOTICE).
+
+The downstream changes adapt the original catalog layouts for the shared
+BilikodiRe login, search and playback, and add Kodi Omega compatibility,
+multi-part selection, playback metadata and DASH support.

@@ -31,19 +31,25 @@ def passfunc():
 ###############
 # 主页路由
 ###############
+@bili.route("/catalog/")
+def catalog():
+    xbmc.executebuiltin("RunScript(plugin.video.bilikodiRe)")
+    return index()
+
+
 @bili.route("/")
 def index():
     c.init()
     i = [
+      {"label": "影视分类", "path": bili.url_for("catalog")},
       {"label": "首页推荐", "path": bili.url_for("feed_home", page=1)},
-      {"label": "入站必刷", "path": bili.url_for("feed_popular")},
       {"label": "我的账户", "path": bili.url_for("user_page", uid=srt.get_uid())},
       {"label": "我的投稿视频", "path": bili.url_for("user_upload", uid=srt.get_uid(), page=1)},
       {"label": "我的关注", "path": bili.url_for("user_sub", uid=srt.get_uid(), page=1)},
       {"label": "我的收藏夹", "path": bili.url_for("user_fav", uid=srt.get_uid())},
       {"label": "搜索", "path": bili.url_for("search_ready")},
       {"label": "插件设置", "path": bili.url_for("open_set")},
-      # {"label": "登录帐号", "path": bili.url_for("login_qrcode")},
+      {"label": "扫码登录哔哩哔哩", "path": bili.url_for("login_qrcode")},
       {"label": "Bilikodi Reborn 帮助", "path": bili.url_for('help')},
     #  {"label": "大家好我是棍母"}
     ]
@@ -54,7 +60,6 @@ def index():
     return items
 
 @bili.route("/feed_home/<page>")
-# @bili.cached(TTL=3)
 def feed_home(page):
     items = []
     params = {"fresh_type": ts.getSet("home_fresh"), "fresh_idx": int(page), "ps": ts.getSet("ps.home", int)}
@@ -84,6 +89,11 @@ def feed_popular():
 #  User/用户/Up主 路由
 @bili.route("/user/<uid>/")
 def user_page(uid):
+    if uid == '0':
+        uid = srt.get_uid()
+        if uid == '0':
+            xbmcgui.Dialog().ok('BilikodiRe', '请先登录哔哩哔哩账号')
+            return []
     params = srt.getwbikey({
         "mid": uid
     })
@@ -159,6 +169,11 @@ def user_page(uid):
 # 关注列表
 @bili.route("/user_sub/<uid>/<page>/")
 def user_sub(uid, page):
+    if uid == '0':
+        uid = srt.get_uid()
+        if uid == '0':
+            xbmcgui.Dialog().ok('BilikodiRe', '请先登录哔哩哔哩账号')
+            return []
     ps = ts.getSet("ps.subs", int)
     params = ts.dict2url({
         "vmid": uid,
@@ -206,6 +221,11 @@ def user_sub(uid, page):
 # 投稿明细
 @bili.route("/user_uploaded/<uid>/<page>")
 def user_upload(uid, page):
+    if uid == '0':
+        uid = srt.get_uid()
+        if uid == '0':
+            xbmcgui.Dialog().ok('BilikodiRe', '请先登录哔哩哔哩账号')
+            return []
     params = {
         "mid": uid,
         "pn": page,
@@ -233,6 +253,11 @@ def user_upload(uid, page):
 # 收藏
 @bili.route("/fav_folder/<uid>")
 def user_fav(uid):
+    if uid == '0':
+        uid = srt.get_uid()
+        if uid == '0':
+            xbmcgui.Dialog().ok('BilikodiRe', '请先登录哔哩哔哩账号')
+            return []
     params = ts.dict2url({"up_mid": int(uid)})
     res = c.getjson("/x/v3/fav/folder/created/list-all", params=params)
     if not isinstance(res, dict): return
@@ -310,67 +335,15 @@ def fav_con(mlid, page):
     return items
 
 ########################
-# 番剧/剧集 media_bangumi/_ft
-
-@bili.route("/bangumi_info/<ids>/")
-def bangumi_info(ids):
-    items = []
-    
-    params = ts.dict2url({
-        "season_id": ids
-    })
-    url = "/pgc/view/web/season"
-    res = c.getjson(url, params=params)
-    if not isinstance(res, dict): return
-    
-    resu = res["result"]
-    return items
-
-########################
 # 搜索 Search
-def search_type(d, kw, typ):
+
+def search_global(d):
     items = []
     
-    try:
-        resu = d["result"]
-    except:
-        return items
-    # video
-    if typ == "video":
-        for x in resu:
-            items.append(c.get_viditem(x))
     
-    if typ == "media_bangumi":
-        bili.set_content("movie")
-        for nb in resu:
-            label = ""
-            
-            plot = nb["desc"]
-            if nb["type"] == "media_bangumi":
-                label = ts.ctxt("[番剧] ", color="pink")
-
-            label += nb["title"]
-            items.append({"label": label, "icon": nb["cover"], "path": bili.url_for("passfunc"), "info": {"plot": plot, "genre": nb["styles"], "year": ts.ts2date(nb["pubtime"], ctype=1000)}})
-    
-    if typ == "bili_user":
-        for nu in resu:
-            plot = ""
-            plot += f"uid: {nu['mid']}\n"
-            plot += f"{nu['fans']} 粉丝 | {nu['videos']} 投稿 | Lv{nu['level']}\n"
-            plot += f"\n{nu['usign']}"
-            
-            label = ts.ctxt("[用户] ", color="yellow") + nu["uname"]
-            items.append({"label": label, "icon": "https:"+nu["upic"], "path": bili.url_for("user_page", uid=nu["mid"]), "info": {"plot": plot}})
-    
-    return items
-
-def search_global(d, kw, typ):
-    items = []
-    
-    if d["page"] == 1 and typ == "all":
-        items.append({"label": ts.ctxt("搜视频", color="pink"), "path": bili.url_for("search", keyword=kw, typ="video", page=1)})
-        items.append({"label": ts.ctxt("搜用户", color="pink"), "path": bili.url_for("search", keyword=kw, typ="bili_user", page=1)})
-        items.append({"label": ts.ctxt("搜番剧", color="pink"), "path": bili.url_for("search", keyword=kw, typ="media_bangumi", page=1)})
+    if d["page"] == 1:
+        items.append({"label": ts.ctxt("搜用户", color="pink"), "path": bili.url_for("passfunc")})
+        items.append({"label": ts.ctxt("搜番剧", color="pink"), "path": bili.url_for("passfunc")})
     
     """
     haha终于可以登录状态下稳定返回内容啦
@@ -403,7 +376,7 @@ def search_global(d, kw, typ):
                 label = ts.ctxt("[番剧] ", color="pink")
 
             label += nb["title"]
-            items.append({"label": label, "icon": nb["cover"], "path": bili.url_for("passfunc"), "info": {"plot": plot, "genre": nb["styles"], "year": ts.ts2date(nb["pubtime"], ctype=1000)}})
+            items.append({"label": label, "icon": nb["cover"], "path": bili.url_for("season_page", season_id=nb["season_id"]), "info": {"plot": plot, "genre": nb["styles"], "year": ts.ts2date(nb["pubtime"], ctype=1000)}})
     
     # media_ft /Movies
     if len(ft["data"]) != 0:
@@ -414,7 +387,7 @@ def search_global(d, kw, typ):
             
             plot = ""
             plot += nft["desc"]
-            items.append({"label": label, "icon": nft["cover"], "path": bili.url_for("passfunc"), "info": {"plot": plot}})
+            items.append({"label": label, "icon": nft["cover"], "path": bili.url_for("season_page", season_id=nft["season_id"]), "info": {"plot": plot}})
     
     # Users
     if len(u["data"]) != 0:
@@ -430,9 +403,8 @@ def search_global(d, kw, typ):
     
     # Videos
     for x in v["data"]:
-        if "live_status" in x and x["live_status"] == 1:
-            continue
         items.append(c.get_viditem(x))
+        # log(x)
     return items
     
 
@@ -443,11 +415,10 @@ def search(keyword, typ, page):
     # urlpath/params
     urlpath = "/x/web-interface/wbi/search/all/v2"
     params = {
-        "keyword": keyword,
+        "keyword": keyword
     }
     if typ != "all":
         params["search_type"] = typ
-        params["page"] = page
         urlpath = "/x/web-interface/wbi/search/type"
     
     # Get
@@ -462,9 +433,7 @@ def search(keyword, typ, page):
     
     # 综合搜索
     if typ == "all":
-        return search_global(res["data"], keyword, typ)
-    else:
-        return search_type(res["data"], keyword, typ)
+        return search_global(res["data"])
 
 @bili.route("/search_input/")
 def search_input():
@@ -485,56 +454,152 @@ def search_input():
 @bili.route("/search_ready/")
 def search_ready():
     items = [
-      {"label": ts.ctxt("新搜索", color="yellow"), "path": bili.url_for("search_input")},
-      {"label": ts.ctxt("test_search", color="red"), "path": bili.url_for("search", keyword="籽岷", typ="all", page=1)},
-      {"label": ts.ctxt("test_search", color="red"), "path": bili.url_for("search", keyword="少女终末旅行", typ="all", page=1)}
+      {"label": ts.ctxt("新搜索", color="yellow"), "path": bili.url_for("search_input", keyword="abx", typ="all_input", page=1)},
     ]
     return items
 
 
 ########################
 # PlayVideo 路由
+def get_pgc_result(path, params):
+    try:
+        response = c.http.get(
+            "https://api.bilibili.com" + path,
+            params=params, headers=c.heads, cookies=srt.get_cooks(), timeout=10,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except (r.RequestException, ValueError):
+        xbmcgui.Dialog().ok("BilikodiRe", "无法连接哔哩哔哩影视服务")
+        return {}
+    if payload.get("code") != 0:
+        xbmcgui.Dialog().ok("BilikodiRe", payload.get("message") or "影视请求失败")
+        return {}
+    return payload.get("result") or payload.get("data") or {}
+
+
+@bili.route("/season/<season_id>/")
+def season_page(season_id):
+    season = get_pgc_result("/pgc/view/web/season", {"season_id": season_id})
+    return [
+        {
+            "label": " ".join(filter(None, (episode.get("title"), episode.get("long_title")))),
+            "icon": episode.get("cover") or season.get("cover", ""),
+            "path": bili.url_for("episode_play", episode_id=episode["id"], cid=episode["cid"]),
+            "is_playable": True,
+        }
+        for episode in season.get("episodes", [])
+        if episode.get("id") and episode.get("cid")
+    ]
+
+
+@bili.route("/episode/<episode_id>/<cid>/")
+def episode_play(episode_id, cid):
+    season = get_pgc_result("/pgc/view/web/season", {"ep_id": episode_id})
+    data = get_pgc_result(
+        "/pgc/player/web/playurl",
+        {"ep_id": episode_id, "cid": cid, "qn": 80, "fnval": 4048},
+    )
+    if not data:
+        return
+    video_url = playback_source(data, cid)
+    if isinstance(video_url, str):
+        video_url += '|Referer=https%3A%2F%2Fwww.bilibili.com%2F'
+    if video_url:
+        episode = next((item for item in season.get("episodes", [])
+                        if str(item.get("id")) == str(episode_id)), {})
+        title = season.get("title") or episode.get("title") or "哔哩哔哩"
+        if episode.get("long_title"):
+            title += " · " + episode["long_title"]
+        resolve_with_info(video_url, title, season.get("evaluate", ""),
+                          episode.get("cover") or season.get("cover", ""))
+    else:
+        xbmcgui.Dialog().ok("BilikodiRe", "当前账号没有可播放的视频流")
+
+
+def get_video_details(bv):
+    response = c.getjson("/x/web-interface/view", params=ts.dict2url({"bvid": bv}))
+    return (response or {}).get("data") or {}
+
+
+def get_video_parts(bv):
+    return get_video_details(bv).get("pages") or []
+
+
+def part_label(part):
+    label = "P{}".format(part["page"])
+    if part.get("part"):
+        label += "  " + part["part"]
+    return label
+
+
+@bili.route("/video_parts/<bv>/")
+def video_parts(bv):
+    return [
+        {
+            "label": part_label(part),
+            "path": bili.url_for("bvplay", bv=bv, cid=part["cid"]),
+            "is_playable": True,
+        }
+        for part in get_video_parts(bv)
+    ]
+
+
 @bili.route("/bvplay/<bv>/<cid>")
 def bvplay(bv, cid):
-    legacy_mode = True
-    if cid == 0 or cid == "0":
-        res = c.getjson("/x/web-interface/view", params=ts.dict2url({"bvid": bv}))
-        if res["code"] != 0:
-            xbmcgui.Dialog().ok("Error", "无法获取视频 cid")
+    details = get_video_details(bv)
+    parts = details.get("pages") or []
+    if str(cid) == "0":
+        if not parts:
+            xbmcgui.Dialog().ok("BilikodiRe", "无法获取视频分 P")
             return
-        cid = res["data"]['pages'][0]['cid']
-    
+        selected = 0
+        if len(parts) > 1:
+            selected = xbmcgui.Dialog().select("选择分 P", [part_label(part) for part in parts])
+            if selected < 0:
+                return
+        cid = parts[selected]["cid"]
+
     url = "/x/player/playurl"
-    qn = 64
-    params = {
-        'bvid': bv,
-        'cid': cid,
-        'qn': qn,
-        'fnval': 4048,
-        'fourk': 1,
-        # "platform": "html5"
-    }
-    if legacy_mode:
-        params = {
-            'bvid': bv,
-            'cid': cid,
-            'qn': qn,
-            'fnval': 1,
-            'platform': 'html5'
-        }
-    # if legacy_mode: params["platform"] = "html5"
-    params = srt.getwbikey(params)
-    res = c.getjson(url, params=ts.dict2url(params))
-    
-    # code
-    if res["code"] != 0:
-        xbmcgui.Dialog().ok("Error", f"{res['code']}: {res['message']}")
+    params = {"bvid": bv, "cid": cid, "qn": 80, "fnval": 4048}
+    res = c.getjson(url, params=ts.dict2url(srt.getwbikey(params)))
+    if not res or not res.get("data"):
         return
-    
+
     resu = res["data"]
     
+    video_url = playback_source(resu, cid)
+    if video_url:
+        part = next((entry for entry in parts if str(entry.get("cid")) == str(cid)), {})
+        title = details.get("title") or bv
+        if len(parts) > 1 and part:
+            title += " · " + part_label(part)
+        resolve_with_info(video_url, title, details.get("desc", ""),
+                          details.get("pic", ""), (details.get("owner") or {}).get("name"))
+        c.rec_history(bv, cid)
+
+
+def resolve_with_info(source, title, plot, cover, author=None):
+    item = {"path": source} if isinstance(source, str) else dict(source)
+    info = {"mediatype": "movie", "title": title, "plot": plot}
+    if author:
+        info["director"] = author
+    item.update(label=title, info=info)
+    if cover:
+        if cover.startswith("//"):
+            cover = "https:" + cover
+        item.update(thumbnail=cover, icon=cover, fanart=cover)
+    bili.set_resolved_url(item)
+
+
+def playback_source(resu, cid):
+    video_url = None
     # Dash format
-    if "dash" in resu:
+    if (resu.get("dash") or {}).get("video"):
+        port = xbmcgui.Window(10000).getProperty("BilikodiRe.ManifestPort")
+        if not port.isdigit():
+            xbmcgui.Dialog().ok("BilikodiRe", "高清播放服务未启动，请重启 Kodi")
+            return None
         mpd = ts.genmpd(resu["dash"])
         mpdpath = os.path.join(c.temp_dir, f"{cid}.mpd")
         resu2 = False
@@ -545,22 +610,22 @@ def bvplay(bv, cid):
             return
         
         video_url = {
-            'path': 'file://{}'.format(mpdpath),
+            'path': f"http://127.0.0.1:{port}/{cid}.mpd",
             'properties': {
                 'inputstream': 'inputstream.adaptive',
-                'inputstream.adaptive.manifest_type': 'mpd',
+                'inputstream.adaptive.stream_selection_type': 'manual-osd',
                 'inputstream.adaptive.manifest_headers': 'Referer=https://www.bilibili.com',
                 'inputstream.adaptive.stream_headers': 'Referer=https://www.bilibili.com'
             }
         }
     
     # mp4 h264 format
-    if 'durl' in resu:
+    if resu.get('durl'):
         video_url = resu["durl"][0]["url"]
     
-    c.rec_history(bv, cid)  
-    bili.set_resolved_url(video_url)
-    
+    return video_url
+
+
 ########################
 # Login
 @bili.route("/login_qrcode/")
@@ -570,7 +635,7 @@ def login_qrcode():
         xbmcgui.Dialog().ok("Error", "无法获取 qrcode url")
         ts.err("Failed to Create a Qrcode")
         return
-    path = os.path.join(c.temp_dir, "qrcode.png")
+    path = os.path.join(c.temp_dir, "qrcode-" + __import__("uuid").uuid4().hex + ".png")
     qrimg = ts.qrgen(url, path)
     # Menu
     i = [
@@ -597,7 +662,7 @@ def login_checkqr(key):
     if cooks == False: return
     # 保存内容
     user = bili.get_storage("user")
-    user["cookies"] = str(r.utils.dict_from_cookiejar(cooks))
+    user["cookies"] = r.utils.dict_from_cookiejar(cooks)
     user["refkey"] = refkey
     user.sync() # Sync storage immediately
     # 弹弹窗显示
@@ -635,10 +700,10 @@ def open_set():
 # help
 @bili.route("/help/")
 def help():
-    a = f"无人问津的客户端 ~ Bilikodi Reborn {version}\n"
+    a = f"到达流媒体飞沫天 ~ Bilikodi Reborn {version}\n"
     a += "重构的 Bilikodi 打赢复活赛，基于bilibili-api实现\n"
     a += "应该适用于 Kodi 19~22 所有版本\n"
-    a += "搜索中文关键词请使用中文输入法或者自动补全插件"
+    a += "搜索中文关键词请使用中文输入法或者其他辅助插件"
     xbmcgui.Dialog().ok("帮助/说明", a)
 
 if __name__ == "__main__":

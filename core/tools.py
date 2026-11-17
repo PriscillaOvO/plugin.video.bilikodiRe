@@ -61,9 +61,9 @@ def ts2date(timestamp, ctype=1, custom=False):
     if ctype == 2:
         return dt.strftime('%d.%m.%Y')
     elif ctype == 3:
-        return dt.strftime('%Y-%m-%d')
+        return dt.strtime('%Y-%m-%d')
     elif ctype == 1000:
-        return dt.strftime('%Y')
+        return dt.strtime('%Y')
     else:
         return dt.strftime('%Y.%m.%d %H:%M:%S')
 

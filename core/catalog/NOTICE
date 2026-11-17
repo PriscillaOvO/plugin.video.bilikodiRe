@@ -1,0 +1,4 @@
+The catalog window classes in this directory and the Bilibili catalog XML layouts
+and data files under resources are adapted from mkckr0/script.video.bilibili.
+Upstream: https://github.com/mkckr0/script.video.bilibili
+License: GPL-2.0-or-later (see LICENSE in this directory).

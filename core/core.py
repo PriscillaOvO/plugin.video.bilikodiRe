@@ -1,6 +1,9 @@
 # Get
 import json, time, os
 import requests as r
+
+http = r.Session()
+http.trust_env = False
 import xbmcgui, xbmcvfs, xbmcaddon
 from xbmcswift2 import Plugin
 
@@ -32,19 +35,18 @@ def temp_item(a: dict):
 
 # 项目图库
 def get_image(s):
-    match s:
-        case "bilikodi" | "logo" | "bilikodire" | "icon":
-            return os.path.join(addon_dir, "icon.png")
-        case "oldfanart" | "oldbg" | "old_bg" | "bsgm":
-            return os.path.join(addon_dir, "old_fanart.png")
-        case "fanart" | "bg" | "srow3" | "sr":
-            return os.path.join(addon_dir, "fanart.png")
-        case _:
-            return ""
+    if s in ("bilikodi", "logo", "bilikodire", "icon"):
+        return os.path.join(addon_dir, "icon.png")
+    if s in ("oldfanart", "oldbg", "old_bg", "bsgm"):
+        return os.path.join(addon_dir, "old_fanart.png")
+    if s in ("fanart", "bg", "srow3", "sr"):
+        return os.path.join(addon_dir, "fanart.png")
+    return ""
+
 
 def getjson(urlpath, urlbase="https://api.bilibili.com", params="", cookies=srt.get_cooks(), headers=heads):
     #if isinstance(params, dict): parmas = ts.dict2url(parmas)
-    res = r.get(f"{urlbase}{urlpath}?{params}", cookies=cookies, headers=headers)
+    res = http.get(f"{urlbase}{urlpath}?{params}", cookies=cookies, headers=headers)
     ts.log(f"param: {params}\ncallback: {res.text}")
     try: raw = res.json()
     except:
@@ -60,7 +62,7 @@ def getjson(urlpath, urlbase="https://api.bilibili.com", params="", cookies=srt.
 
 def postjson(urlpath, data, urlbase="https://api.bilibili.com", params="", cookies=srt.get_cooks(), headers=heads):
     #if isinstance(params, dict): parmas = ts.dict2url(parmas)
-    res = r.post(f"{urlbase}{urlpath}?{params}", cookies=cookies, headers=headers, data=data)
+    res = http.post(f"{urlbase}{urlpath}?{params}", cookies=cookies, headers=headers, data=data)
     ts.log(res.text)
     try: raw = res.json()
     except:
@@ -159,7 +161,7 @@ def get_viditem(v):
     
     # Kodi Metadata
     info = {
-         "mediatype": "video",
+         "mediatype": "movie",
          "duration": duration,
          "title": title,
          "plot": plot
@@ -171,12 +173,13 @@ def get_viditem(v):
     context = [
        ("点赞", f"Container.Update({bili.url_for('passfunc')}")
     ]
+    parts_url = bili.url_for("video_parts", bv=bvid)
+    context.append(("选择分 P", f"Container.Update({parts_url})"))
     if uname: context.append((f"跳转到 {uname}", f"Container.Update({bili.url_for('user_page', uid=mid)})"))
     i = {
        "label": title,
        "icon": pic,
        "fanart": pic,
-       "thumbnail": pic,
        "path": bili.url_for("bvplay", bv=bvid, cid=cid),
        "info": info,
        "context_menu": context,
@@ -212,7 +215,7 @@ def parse_plot(item):
         stat = item['stat']
         if 'view' in stat:
             state += f"{ts.n2num(stat['view'])}播放 | "
-        elif 'play' in stat:
+        elif  'play' in stat:
             state += f"{ts.n2num(stat['play'])}播放 | "
         if 'like' in stat:
             state += f"{ts.n2num(stat['like'])}点赞 | "
@@ -269,8 +272,7 @@ def parse_duration(duration_text):
 # 登录生成 qrcode
 def login_genqr():
     try:
-        res = r.get("https://passport.bilibili.com/x/passport-login/web/qrcode/generate", headers=heads)
-        ts.log(res.text)
+        res = http.get("https://passport.bilibili.com/x/passport-login/web/qrcode/generate", headers=heads)
         res = res.json()
         ts.log(f"CreateQrcodeRequest: {res['code']}, {res['message']}")
     except:
@@ -280,7 +282,7 @@ def login_genqr():
 
 # 验证
 def login_checkqr(qrkey):
-    res = r.get(f"https://passport.bilibili.com/x/passport-login/web/qrcode/poll?qrcode_key={qrkey}", headers=heads)
+    res = http.get(f"https://passport.bilibili.com/x/passport-login/web/qrcode/poll?qrcode_key={qrkey}", headers=heads)
     resj = res.json()
     if resj["data"]["code"] != 0:
         xbmcgui.Dialog().ok("Error", f"二维码未正常扫码: \n{resj['data']['code']}: {resj['data']['message']}")
@@ -299,7 +301,7 @@ def login_local():
         cooks = r.utils.cookiejar_from_dict(res["cookies"])
     # 验证 cookies
     try:
-        re = r.get("https://api.bilibili.com/x/web-interface/nav/stat", headers=heads, cookies=cooks)
+        re = http.get("https://api.bilibili.com/x/web-interface/nav/stat", headers=heads, cookies=cooks)
         resu = re.json()
     except:
         ts.err("RequestsIsNotAvailable")
@@ -319,7 +321,7 @@ def login_local():
 def check_login():
     cooks = srt.get_cooks()
     try:
-        re = r.get("https://api.bilibili.com/x/web-interface/nav/stat", headers=heads, cookies=cooks)
+        re = http.get("https://api.bilibili.com/x/web-interface/nav/stat", headers=heads, cookies=cooks)
         ts.log(f"Callback: {re.text}")
         resu = re.json()
     except:
